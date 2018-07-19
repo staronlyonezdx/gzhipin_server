@@ -17,6 +17,7 @@ var {UserModel} = require("../db/models");
 router.post("/register", function (req, res, next) {
   //获取请求参数
   const {username, password, type} = req.body;
+  // res.setHeader('Access-Control-Allow-Origin','http://localhost:3000')
   //处理参数
   // 根据username查询数据库, 看是否已存在user
   UserModel.findOne({username}, function (error, user) {
@@ -47,7 +48,7 @@ router.post("/login", function (req, res, next) {
   const {username, password} = req.body;
   //处理数据
   //在数据库中查找数据
-  UserModel.findOne({username, password:md5(password)}, {password: 0, _v: 0}, function (error, user) {
+  UserModel.findOne({username, password: md5(password)}, {password: 0, _v: 0}, function (error, user) {
     //如果数据存在,返回响应
     if (user) {
       //添加cookie,一周免登陆
@@ -65,4 +66,19 @@ router.post("/login", function (req, res, next) {
     }
   })
 });
+//更新用户路由
+router.post('/update', function (req, res, next) {
+  const userid = req.cookies.userid;
+  if (!userid) {//说明没有登陆过,提示重新登陆
+    return res.send({code: 1, msg: "请先登陆"});
+  }
+  //登陆过,更新数据库中的数据
+  UserModel.findByIdAndUpdate({_id: userid}, req.body, function (error, oldUser) {
+    const {_id, username, type} = oldUser;
+    const data = Object.assign(req.body, {_id, username, type});
+    res.send({code: 0, data});
+  })
+});
+
+
 module.exports = router;
